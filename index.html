@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Team Agent · nhóm AI</title>
+<style>
+:root{--bg:#0f1220;--card:#181c30;--text:#e8eaf6;--muted:#9aa0c0;--accent:#c6f36b;--border:#2a2f4a;--field:#0c0f1c}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.5;padding:0 12px}
+header{position:sticky;top:0;background:var(--bg);padding:12px 0 8px;z-index:5;border-bottom:1px solid var(--border)}
+h1{font-size:18px;margin:0}
+h2{font-size:15px;margin:0 0 8px}
+details{background:var(--card);border:1px solid var(--border);border-radius:12px;margin:10px 0;padding:10px 12px}
+summary{cursor:pointer;font-weight:600;font-size:15px}
+.section{margin-top:12px}
+label{display:block;font-size:13px;color:var(--muted);margin:10px 0 4px}
+input,textarea{width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--field);color:var(--text);font-size:16px;font-family:inherit}
+textarea{min-height:60px;resize:vertical}
+button{width:100%;padding:12px;margin-top:8px;border:0;border-radius:10px;background:var(--accent);color:#111;font-size:16px;font-weight:600}
+button.alt{background:#2e3450;color:var(--text)}
+button:disabled{opacity:.5}
+.row{display:flex;gap:8px;align-items:center}
+.row>*{flex:1}
+.small{font-size:12px;color:var(--muted)}
+.agent{border:1px solid var(--border);border-radius:10px;padding:10px;margin-top:10px}
+.agent-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.agent-head label{margin:0;color:var(--text);display:flex;gap:6px;align-items:center}
+.agent-head input{width:20px;height:20px;margin:0}
+.check{display:flex;gap:8px;align-items:center;margin-top:10px;font-size:14px;color:var(--text)}
+.check input{width:20px;height:20px;margin:0}
+#chat{padding:8px 0 16px;min-height:40vh}
+.msg{max-width:90%;padding:10px 12px;border-radius:14px;margin:8px 0;background:var(--card);border:1px solid var(--border)}
+.msg.me{margin-left:auto;background:#24331c;border-color:#3f5a2a}
+.msg.sys{max-width:100%;background:transparent;border-style:dashed;color:var(--muted);font-size:13px;text-align:center}
+.who{font-size:12px;color:var(--muted);margin-bottom:4px}
+.txt{white-space:pre-wrap;word-break:break-word;font-size:15px}
+.files{font-size:12px;color:var(--muted);margin-top:6px}
+.composer{position:sticky;bottom:0;background:var(--bg);border-top:1px solid var(--border);padding:8px 0 calc(8px + env(safe-area-inset-bottom,0px))}
+.filebtn{display:inline-block;padding:10px 14px;border-radius:10px;background:#2e3450;color:var(--text);font-size:15px;font-weight:600;cursor:pointer;margin:0 0 8px}
+#files{display:none}
+.att{display:flex;justify-content:space-between;align-items:center;gap:8px;border:1px solid var(--border);border-radius:8px;padding:6px 10px;margin-top:6px;font-size:13px;word-break:break-all}
+.att small{color:var(--muted)}
+.att button{width:auto;margin:0;padding:2px 10px;background:#3a2030;color:#ffb4b4;font-size:16px}
+.status{font-size:12px;color:var(--accent);min-height:16px}
+.composer .row button{margin-top:6px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Team Agent · nhóm AI</h1>
+  <div class="small" id="stateLine">Sẵn sàng</div>
+</header>
+
+<details>
+  <summary>Cài đặt và đội AI</summary>
+  <div class="section">
+    <label for="code">Mã truy cập</label>
+    <input id="code" type="password" autocomplete="off" placeholder="Mã bạn đã đặt trên Vercel">
+    <label for="limit">Giới hạn lượt mỗi ngày (đếm trên trình duyệt này)</label>
+    <input id="limit" type="number" min="1" value="50">
+    <div class="row" style="margin-top:6px">
+      <div><div class="small">Hôm nay đã dùng</div><strong id="used">0</strong></div>
+      <button id="resetCount" class="alt">Đặt lại đếm</button>
+    </div>
+    <label for="maxTurns">Số lượt tối đa cho mỗi lần gửi (1 đến 30)</label>
+    <input id="maxTurns" type="number" min="1" max="30" value="8">
+    <label for="delay">Nghỉ giữa các lượt (giây)</label>
+    <input id="delay" type="number" min="0" value="3">
+    <label for="frames">Số khung hình lấy từ mỗi video (1 đến 12)</label>
+    <input id="frames" type="number" min="1" max="12" value="6">
+    <label for="visionModel">Model nhận ảnh, video, PDF</label>
+    <input id="visionModel" list="modelList" placeholder="Bấm nút bên dưới để tải danh sách">
+    <datalist id="modelList"></datalist>
+    <button id="loadModels" class="alt">Tải model miễn phí có nhận ảnh</button>
+    <label class="check"><input id="mediaAll" type="checkbox"> Gửi ảnh, video, PDF cho mọi lượt (tốn hơn)</label>
+  </div>
+
+  <div class="section">
+    <h2>Đội AI</h2>
+    <div class="small">Bật agent nào thì agent đó tham gia nhóm. Agent có thể nhắc nhau bằng @handle, ví dụ @reviewer.</div>
+    <div id="agents"></div>
+    <div class="row">
+      <button id="saveAgents" class="alt">Lưu đội</button>
+      <button id="resetAgents" class="alt">Khôi phục mặc định</button>
+    </div>
+  </div>
+
+  <div class="section">
+    <button id="resetChat" class="alt">Xóa cuộc trò chuyện</button>
+  </div>
+</details>
+
+<main id="chat"></main>
+
+<div class="composer">
+  <div id="attList"></div>
+  <div id="status" class="status"></div>
+  <label class="filebtn" for="files">📎 Thêm ảnh, video, PDF, tệp văn bản</label>
+  <input id="files" type="file" multiple accept="image/*,video/*,application/pdf,.txt,.md,.csv,.json,.js,.ts,.py,.html,.css,.xml,.yml,.yaml,.log,.sql">
+  <textarea id="input" placeholder="Viết việc cần làm. Nhắc agent bằng @handle, ví dụ: @reviewer kiểm tra giúp mình"></textarea>
+  <div class="row">
+    <button id="send">Gửi</button>
+    <button id="stop" class="alt" disabled>Dừng</button>
+  </div>
+</div>
+
+<script>
+const DEFAULT_AGENTS = [
+  {handle:"planner", name:"Chia việc", model:"openrouter/free", on:true,
+   prompt:"Bạn chia việc. Tách yêu cầu thành các bước ngắn, rõ ràng, có thứ tự."},
+  {handle:"researcher", name:"Nghiên cứu", model:"openrouter/free", on:false,
+   prompt:"Bạn nghiên cứu. Nêu thông tin, ý tưởng và rủi ro liên quan đến việc cần làm."},
+  {handle:"builder", name:"Thực hiện", model:"openrouter/free", on:true,
+   prompt:"Bạn thực hiện. Dựa trên các bước và thông tin trong nhóm, viết kết quả cụ thể và hoàn chỉnh."},
+  {handle:"reviewer", name:"Kiểm duyệt", model:"openrouter/free", on:true,
+   prompt:"Bạn kiểm duyệt. Kiểm tra kết quả có đúng yêu cầu không, nêu rõ phần sai hoặc thiếu và đề xuất cách sửa."},
+  {handle:"editor", name:"Tổng hợp", model:"openrouter/free", on:false,
+   prompt:"Bạn tổng hợp. Gộp các đóng góp thành một kết quả cuối gọn, dễ dùng."},
+  {handle:"coder", name:"Viết code", model:"openrouter/free", on:false,
+   prompt:"Bạn là lập trình viên. Viết code gọn, chú thích ngắn khi cần."},
+  {handle:"polisher", name:"Biên tập", model:"openrouter/free", on:false,
+   prompt:"Bạn biên tập. Sửa câu chữ cho rõ ràng, tự nhiên, đúng giọng văn."},
+  {handle:"tester", name:"Kiểm tra lỗi", model:"openrouter/free", on:false,
+   prompt:"Bạn kiểm tra lỗi logic và số liệu. Liệt kê lỗi nếu có."},
+  {handle:"critic", name:"Phản biện", model:"openrouter/free", on:false,
+   prompt:"Bạn phản biện. Chỉ ra điểm yếu và phương án tốt hơn nếu có."},
+  {handle:"shortener", name:"Rút gọn", model:"openrouter/free", on:false,
+   prompt:"Bạn rút gọn. Viết lại kết quả ngắn nhất nhưng vẫn đủ ý."}
+];
+
+const TEXT_EXT = ["txt","md","csv","json","js","ts","py","html","css","xml","yml","yaml","log","sql"];
+const KIND_LABEL = {image:"Ảnh", video:"Video", pdf:"PDF", text:"Văn bản"};
+const MAX_PDF_BYTES = 3 * 1024 * 1024;
+const MAX_TEXT_CHARS = 60000;
+const MAX_PAYLOAD_CHARS = 4000000;
+
+const $ = id => document.getElementById(id);
+const clone = x => JSON.parse(JSON.stringify(x));
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const mb = bytes => (bytes / 1048576).toFixed(1) + " MB";
+const today = () => new Date().toISOString().slice(0, 10);
+const usageKey = () => "ta.used." + today();
+const used = () => +(localStorage.getItem(usageKey()) || 0);
+const limit = () => Math.max(1, +$("limit").value || 50);
+const code = () => $("code").value.trim();
+
+let agents = loadAgents();
+let messages = loadChat();
+let pending = [];
+let running = false, stopRequested = false, abortCtl = null;
+
+/* ---------- cài đặt lưu trên trình duyệt ---------- */
+
+["code","limit","maxTurns","delay","frames","visionModel"].forEach(id => {
+  const saved = localStorage.getItem("ta." + id);
+  if (saved !== null) $(id).value = saved;
+  $(id).addEventListener("change", e => localStorage.setItem("ta." + id, e.target.value.trim()));
+});
+const mediaSaved = localStorage.getItem("ta.mediaAll");
+if (mediaSaved !== null) $("mediaAll").checked = mediaSaved === "1";
+$("mediaAll").addEventListener("change", e => localStorage.setItem("ta.mediaAll", e.target.checked ? "1" : "0"));
+
+function showUsed(){ $("used").textContent = used() + " / " + limit(); }
+function bump(){ localStorage.setItem(usageKey(), used() + 1); showUsed(); }
+$("resetCount").onclick = () => { localStorage.removeItem(usageKey()); showUsed(); };
+$("limit").addEventListener("change", showUsed);
+
+function setStatus(msg){ $("status").textContent = msg; }
+function setState(msg){ $("stateLine").textContent = msg; }
+
+/* ---------- đội AI ---------- */
+
+function loadAgents(){
+  try {
+    const s = JSON.parse(localStorage.getItem("ta.agents"));
+    if (Array.isArray(s) && s.length === DEFAULT_AGENTS.length) return s;
+  } catch (e) {}
+  return clone(DEFAULT_AGENTS);
+}
+function saveAgents(){ localStorage.setItem("ta.agents", JSON.stringify(agents)); }
+
+function renderAgents(){
+  $("agents").innerHTML = agents.map((a, i) => `
+    <div class="agent">
+      <div class="agent-head">
+        <strong>@${esc(a.handle)} · ${esc(a.name)}</strong>
+        <label><input type="checkbox" data-i="${i}" data-k="on" ${a.on ? "checked" : ""}> Bật</label>
+      </div>
+      <label>Model (ID trên OpenRouter)</label>
+      <input data-i="${i}" data-k="model" value="${esc(a.model)}">
+      <label>Vai và cách làm việc</label>
+      <textarea data-i="${i}" data-k="prompt">${esc(a.prompt)}</textarea>
+    </div>`).join("");
+}
+function onAgentEdit(e){
+  const i = +e.target.dataset.i, k = e.target.dataset.k;
+  if (isNaN(i) || !k) return;
+  agents[i][k] = k === "on" ? e.target.checked : e.target.value;
+}
+$("agents").addEventListener("input", onAgentEdit);
+$("agents").addEventListener("change", onAgentEdit);
+$("saveAgents").onclick = () => { saveAgents(); alert("Đã lưu đội AI."); };
+$("resetAgents").onclick = () => {
+  if (!confirm("Khôi phục đội AI mặc định?")) return;
+  agents = clone(DEFAULT_AGENTS);
+  renderAgents();
+  saveAgents();
+};
+
+function agentLabel(handle){
+  const a = agents.find(x => x.handle === handle);
+  return a ? a.name : handle;
+}
+
+/* ---------- lưu cuộc trò chuyện ---------- */
+
+function loadChat(){
+  try {
+    const s = JSON.parse(localStorage.getItem("ta.chat"));
+    if (Array.isArray(s)) return s;
+  } catch (e) {}
+  return [];
+}
+function saveChat(){
+  const light = messages.map(({media, ...rest}) => rest);
+  localStorage.setItem("ta.chat", JSON.stringify(light.slice(-60)));
+}
+
+function renderMessages(){
+  const box = $("chat");
+  if (!messages.length) {
+    box.innerHTML = '<div class="small" style="text-align:center;margin-top:24px">Gửi việc cần làm để nhóm bắt đầu. Các agent sẽ đọc và trả lời nhau.</div>';
+    return;
+  }
+  box.innerHTML = messages.map(m => {
+    if (m.from === "system") return `<div class="msg sys">${esc(m.text)}</div>`;
+    const isMe = m.from === "user";
+    const who = isMe ? "Bạn" : "@" + m.from + " · " + agentLabel(m.from) + (m.model ? " · " + m.model : "");
+    const files = (m.files && m.files.length)
+      ? `<div class="files">${m.files.map(f => "📎 " + esc(f.name)).join("<br>")}</div>` : "";
+    return `<div class="msg ${isMe ? "me" : ""}"><div class="who">${esc(who)}</div><div class="txt">${esc(m.text)}</div>${files}</div>`;
+  }).join("");
+  window.scrollTo(0, document.body.scrollHeight);
+}
+
+function sys(text){
+  messages.push({from:"system", text});
+  saveChat();
+  renderMessages();
+}
+
+/* ---------- xử lý tệp đính kèm ---------- */
+
+function once(el, evt){
+  return new Promise((resolve, reject) => {
+    const done = () => { el.removeEventListener("error", fail); resolve(); };
+    const fail = () => { el.removeEventListener(evt, done); reject(new Error("không đọc được video, thử tệp MP4 khác")); };
+    el.addEventListener(evt, done, {once: true});
+    el.addEventListener("error", fail, {once: true});
+  });
+}
+
+function readAsDataUrl(file){
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(r.result);
+    r.onerror = () => reject(new Error("không đọc được tệp"));
+    r.readAsDataURL(file);
+  });
+}
+
+function drawToJpeg(source, w, h, maxSide, quality){
+  if (!w || !h) throw new Error("không lấy được kích thước");
+  const s = Math.min(1, maxSide / Math.max(w, h));
+  const c = document.createElement("canvas");
+  c.width = Math.max(1, Math.round(w * s));
+  c.height = Math.max(1, Math.round(h * s));
+  c.getContext("2d").drawImage(source, 0, 0, c.width, c.height);
+  return c.toDataURL("image/jpeg", quality);
+}
+
+async function imageToDataUrl(file){
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise((resolve, reject) => {
+      const i = new Image();
+      i.onload = () => resolve(i);
+      i.onerror = () => reject(new Error("không đọc được ảnh"));
+      i.src = url;
+    });
+    return drawToJpeg(img, img.naturalWidth, img.naturalHeight, 1024, 0.8);
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+async function videoFrames(file, n){
+  const url = URL.createObjectURL(file);
+  const v = document.createElement("video");
+  v.muted = true;
+  v.playsInline = true;
+  v.preload = "auto";
+  v.src = url;
+  try {
+    await once(v, "loadedmetadata");
+    const dur = v.duration;
+    if (!isFinite(dur) || dur <= 0) throw new Error("không đọc được độ dài video");
+    const frames = [];
+    for (let i = 0; i < n; i++) {
+      const t = dur * (i + 0.5) / n;
+      v.currentTime = t;
+      await once(v, "seeked");
+      frames.push({i, t, url: drawToJpeg(v, v.videoWidth, v.videoHeight, 768, 0.7)});
+    }
+    return frames;
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+async function processFile(f){
+  const name = f.name;
+  const ext = (name.split(".").pop() || "").toLowerCase();
+
+  if (f.type.startsWith("image/")) {
+    const dataUrl = await imageToDataUrl(f);
+    return {kind:"image", name, note: mb(f.size), parts:[{type:"image_url", image_url:{url:dataUrl}}]};
+  }
+
+  if (f.type.startsWith("video/")) {
+    const n = Math.max(1, Math.min(12, +$("frames").value || 6));
+    const frames = await videoFrames(f, n);
+    const parts = [];
+    frames.forEach(fr => {
+      parts.push({type:"text", text: `Video "${name}", khung ${fr.i + 1}/${n} lúc ${fr.t.toFixed(1)} giây:`});
+      parts.push({type:"image_url", image_url:{url: fr.url}});
+    });
+    return {kind:"video", name, note: n + " khung hình · " + mb(f.size), parts};
+  }
+
+  if (f.type === "application/pdf" || ext === "pdf") {
+    if (f.size > MAX_PDF_BYTES) throw new Error("PDF lớn hơn 3 MB, hãy thử tệp nhỏ hơn");
+    const dataUrl = await readAsDataUrl(f);
+    return {kind:"pdf", name, note: mb(f.size), parts:[{type:"file", file:{filename:name, file_data:dataUrl}}]};
+  }
+
+  if (f.type.startsWith("text/") || TEXT_EXT.includes(ext)) {
+    let text = await f.text();
+    let note = "văn bản";
+    if (text.length > MAX_TEXT_CHARS) {
+      text = text.slice(0, MAX_TEXT_CHARS);
+      note += " (cắt còn 60.000 ký tự)";
+    }
+    return {kind:"text", name, note, text};
+  }
+
+  throw new Error("định dạng chưa được hỗ trợ");
+}
+
+function renderAttachments(){
+  if (!pending.length) {
+    $("attList").innerHTML = "";
+    return;
+  }
+  $("attList").innerHTML = pending.map((a, i) =>
+    `<div class="att"><span>${esc(KIND_LABEL[a.kind])}: ${esc(a.name)} <small>${esc(a.note)}</small></span><button data-i="${i}" aria-label="Xóa">×</button></div>`
+  ).join("");
+}
+
+$("attList").addEventListener("click", e => {
+  const i = e.target.dataset.i;
+  if (i !== undefined) {
+    pending.splice(+i, 1);
+    renderAttachments();
+  }
+});
+
+$("files").addEventListener("change", async e => {
+  const files = Array.from(e.target.files || []);
+  e.target.value = "";
+  for (const f of files) {
+    setStatus("Đang xử lý " + f.name);
+    try {
+      pending.push(await processFile(f));
+    } catch (err) {
+      alert(f.name + ": " + err.message);
+    }
+    renderAttachments();
+  }
+  setStatus("");
+});
+
+/* ---------- định tuyến giữa các agent ---------- */
+
+function pickNext(text, current, enabled){
+  if (/\[XONG\]/i.test(text)) return null;
+  const mentions = (text.match(/@[a-z]+/gi) || []).map(s => s.slice(1).toLowerCase()).reverse();
+  for (const h of mentions) {
+    if (h === current.handle) continue;
+    const hit = enabled.find(a => a.handle === h);
+    if (hit) return hit;
+  }
+  if (!enabled.length) return null;
+  if (enabled.length === 1 && current.handle === enabled[0].handle) return null;
+  const idx = enabled.findIndex(a => a.handle === current.handle);
+  return enabled[(idx + 1) % enabled.length];
+}
+
+function protocolText(enabled){
+  const list = enabled.map(a => "@" + a.handle + " (" + a.name + ")").join(", ");
+  return "Bạn đang trong nhóm chat AI cùng: " + list + ". " +
+    "Đọc hội thoại trước khi trả lời và không lặp lại nguyên văn tin nhắn của người khác. " +
+    "Nếu cần một agent khác làm tiếp, kết thúc bằng một dòng có @handle của agent đó, ví dụ @reviewer. " +
+    "Nếu kết quả đã đạt yêu cầu và không còn việc gì, kết thúc bằng [XONG]. " +
+    "Không tự nhắc đến chính mình. Trả lời bằng tiếng Việt, ngắn gọn.";
+}
+
+function transcriptFor(current){
+  const recent = messages.filter(m => m.from !== "system").slice(-20);
+  const lines = recent.map(m => {
+    if (m.from === "user") {
+      const names = m.files && m.files.length ? "\n(đính kèm: " + m.files.map(f => f.name).join(", ") + ")" : "";
+      return "[Người dùng]: " + m.text + names + (m.fileText ? "\n\n" + m.fileText : "");
+    }
+    return "[@" + m.from + "]: " + m.text;
+  });
+  return "Hội thoại:\n\n" + lines.join("\n\n") +
+    "\n\nĐến lượt bạn là @" + current.handle + " (" + current.name + "). Hãy trả lời theo vai của bạn.";
+}
+
+function buildContent(text, media){
+  if (!media.length) return text;
+  return [{type:"text", text}, ...media];
+}
+
+/* ---------- gọi API qua proxy ---------- */
+
+async function callModel(model, msgs, plugins){
+  const body = {model, messages: msgs};
+  if (plugins) body.plugins = plugins;
+  const payload = JSON.stringify(body);
+  if (payload.length > MAX_PAYLOAD_CHARS) {
+    throw new Error("nội dung quá lớn cho máy chủ, hãy bớt ảnh, khung hình hoặc tệp");
+  }
+
+  const res = await fetch("/api/chat", {
+    method: "POST",
+    headers: {"Content-Type": "application/json", "X-Access-Code": code()},
+    body: payload,
+    signal: abortCtl ? abortCtl.signal : undefined
+  });
+  let data = {};
+  try { data = await res.json(); } catch (e) {}
+  if (!res.ok) {
+    throw new Error("HTTP " + res.status + ": " + ((data.error && data.error.message) || res.statusText));
+  }
+  const choice = data.choices && data.choices[0];
+  let text = choice && choice.message ? choice.message.content : "";
+  if (typeof text !== "string") text = JSON.stringify(text || "");
+  return {text, model: data.model || model};
+}
+
+/* ---------- vòng trao đổi giữa các agent ---------- */
+
+async function runRound(media, userText){
+  const enabled = agents.filter(a => a.on);
+  const maxTurns = Math.max(1, Math.min(30, +$("maxTurns").value || 8));
+  const delayMs = Math.max(0, +$("delay").value || 0) * 1000;
+  const mediaAll = $("mediaAll").checked;
+  const visionModel = $("visionModel").value.trim();
+  const hasPdf = media.some(p => p.type === "file");
+
+  running = true; stopRequested = false; abortCtl = new AbortController();
+  $("send").disabled = true; $("stop").disabled = false;
+
+  let current = pickNext(userText, {handle:"user"}, enabled) || enabled[0];
+  let finished = false;
+
+  for (let turn = 0; turn < maxTurns; turn++) {
+    if (stopRequested) { sys("Đã dừng theo yêu cầu."); finished = true; break; }
+    if (used() >= limit()) { sys("Đã đạt giới hạn lượt trong ngày theo cài đặt."); finished = true; break; }
+
+    const sendMedia = media.length > 0 && (mediaAll || turn === 0);
+    const model = sendMedia && visionModel ? visionModel : (current.model || "openrouter/free").trim();
+    const plugins = sendMedia && hasPdf ? [{id:"file-parser", pdf:{engine:"pdf-text"}}] : null;
+    const content = buildContent(transcriptFor(current), sendMedia ? media : []);
+    const toSend = [
+      {role:"system", content: current.prompt + "\n\n" + protocolText(enabled)},
+      {role:"user", content}
+    ];
+
+    setState("Đang trả lời: @" + current.handle + " · " + model);
+    bump();
+    try {
+      const r = await callModel(model, toSend, plugins);
+      const reply = r.text.trim() || "(không có nội dung)";
+      messages.push({from: current.handle, text: reply, model: r.model});
+      saveChat();
+      renderMessages();
+      const next = pickNext(reply, current, enabled);
+      if (!next) { sys("Nhóm báo đã xong."); finished = true; break; }
+      current = next;
+    } catch (err) {
+      sys(err.name === "AbortError" ? "Đã dừng." : "Lỗi: " + err.message);
+      finished = true;
+      break;
+    }
+    if (delayMs && turn < maxTurns - 1) await sleep(delayMs);
+  }
+
+  if (!finished) sys("Đã đạt " + maxTurns + " lượt. Gửi tiếp tin nhắn để nhóm làm tiếp.");
+  running = false; abortCtl = null;
+  $("send").disabled = false; $("stop").disabled = true;
+  setState("Sẵn sàng");
+  saveChat();
+  renderMessages();
+}
+
+async function sendMessage(){
+  if (running) return;
+  const text = $("input").value.trim();
+  if (!text && !pending.length) return;
+  if (!code()) return alert("Nhập mã truy cập trong phần Cài đặt và đội AI.");
+  const enabled = agents.filter(a => a.on);
+  if (!enabled.length) return alert("Bật ít nhất một agent trong đội AI.");
+  saveAgents();
+
+  const fileText = pending.filter(a => a.kind === "text")
+    .map(a => "--- Tệp " + a.name + " ---\n" + a.text).join("\n\n");
+  const media = pending.filter(a => a.kind !== "text").flatMap(a => a.parts);
+
+  messages.push({
+    from: "user",
+    text: text || "(chỉ gửi tệp)",
+    files: pending.map(a => ({kind: a.kind, name: a.name})),
+    fileText,
+    media
+  });
+  pending = [];
+  $("input").value = "";
+  renderAttachments();
+  saveChat();
+  renderMessages();
+  await runRound(media, text);
+}
+
+$("send").onclick = sendMessage;
+$("stop").onclick = () => {
+  stopRequested = true;
+  if (abortCtl) abortCtl.abort();
+};
+$("resetChat").onclick = () => {
+  if (!confirm("Xóa toàn bộ cuộc trò chuyện?")) return;
+  messages = [];
+  saveChat();
+  renderMessages();
+};
+
+/* ---------- tải model miễn phí có nhận ảnh ---------- */
+
+async function loadFreeVisionModels(){
+  $("loadModels").disabled = true;
+  setStatus("Đang tải danh sách model");
+  try {
+    const res = await fetch("/api/models", {headers: {"X-Access-Code": code()}});
+    const data = await res.json();
+    if (!res.ok) throw new Error((data.error && data.error.message) || "HTTP " + res.status);
+    $("modelList").innerHTML = data.ids.map(id => `<option value="${esc(id)}"></option>`).join("");
+    setStatus("Có " + data.ids.length + " model miễn phí nhận ảnh. Chọn trong ô Model nhận ảnh.");
+  } catch (e) {
+    setStatus("");
+    alert("Không tải được danh sách: " + e.message);
+  } finally {
+    $("loadModels").disabled = false;
+  }
+}
+$("loadModels").onclick = loadFreeVisionModels;
+
+renderAgents();
+renderAttachments();
+renderMessages();
+showUsed();
+</script>
+</body>
+</html>
