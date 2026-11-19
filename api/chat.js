@@ -1,38 +1,22 @@
-// Proxy an toàn: key OpenRouter chỉ nằm trên Vercel, không lộ ra trình duyệt.
 module.exports = async (req, res) => {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: { message: "Chỉ nhận POST" } });
-  }
-
   const accessCode = process.env.ACCESS_CODE;
-  const apiKey = process.env.OPENROUTER_API_KEY;
-  if (!accessCode || !apiKey) {
-    return res.status(500).json({ error: { message: "Chưa đặt ACCESS_CODE hoặc OPENROUTER_API_KEY trên Vercel" } });
+  if (!accessCode) {
+    return res.status(500).json({ error: { message: "Chưa đặt ACCESS_CODE trên Vercel" } });
   }
   if (req.headers["x-access-code"] !== accessCode) {
     return res.status(401).json({ error: { message: "Sai mã truy cập" } });
   }
 
-  let body = req.body || {};
-  if (typeof body === "string") {
-    try { body = JSON.parse(body); } catch (e) { body = {}; }
-  }
-  if (!body.model || !Array.isArray(body.messages)) {
-    return res.status(400).json({ error: { message: "Thiếu model hoặc messages" } });
-  }
-
-  const payload = { model: body.model, messages: body.messages };
-  if (Array.isArray(body.plugins)) payload.plugins = body.plugins;
-
   try {
-    const upstream = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: { "Authorization": "Bearer " + apiKey, "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
-    const data = await upstream.json().catch(() => ({}));
-    return res.status(upstream.status).json(data);
+    const upstream = await fetch("https://openrouter.ai/api/v1/models");
+    const json = await upstream.json();
+    const ids = (json.data || []).filter(m =>
+      m.architecture && (m.architecture.input_modalities || []).includes("image") &&
+      m.pricing && Number(m.pricing.prompt) === 0 && Number(m.pricing.completion) === 0
+    ).map(m => m.id).sort();
+    res.setHeader("Cache-Control", "s-maxage=3600, stale-while-revalidate");
+    return res.status(200).json({ ids });
   } catch (err) {
-    return res.status(502).json({ error: { message: "Không gọi được OpenRouter: " + err.message } });
+    return res.status(502).json({ error: { message: "Không tải được danh sách: " + err.message } });
   }
 };
