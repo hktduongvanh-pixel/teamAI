@@ -67,7 +67,7 @@ details summary{cursor:pointer;font-size:14px;font-weight:600}
     <div class="small">Để "Tự động" nếu muốn web tự chọn công cụ có mô tả khớp nhất với việc của bạn. Agent Claude không được chọn tự động vì tốn tiền.</div>
 
     <label class="filebtn" for="files">📎 Thêm ảnh, video, PDF, tệp văn bản</label>
-    <input id="files" type="file" multiple accept="image/*,video/*,application/pdf,.txt,.md,.csv,.json,.js,.ts,.py,.html,.css,.xml,.yml,.yaml,.log,.sql">
+    <input id="files" type="file" multiple accept="image/*,video/*,application/pdf,application/zip,.zip,.txt,.md,.csv,.json,.js,.ts,.jsx,.tsx,.py,.java,.c,.h,.cpp,.hpp,.cs,.go,.rs,.php,.rb,.kt,.swift,.dart,.sh,.html,.css,.scss,.less,.vue,.xml,.yml,.yaml,.toml,.ini,.conf,.env,.gradle,.log,.sql,.lua,.scala,.tex">
     <div id="attList"></div>
     <div id="status" class="status"></div>
 
@@ -397,6 +397,43 @@ async function videoFrames(file, n){
   }
 }
 
+const BINARY_EXT = ["png","jpg","jpeg","gif","webp","heic","bmp","ico","mp3","wav","m4a","aac","ogg","flac","exe","dll","so","dylib","class","jar","apk","ipa","bin","dmg","iso","7z","rar","tar","gz","doc","docx","xls","xlsx","ppt","pptx","key","numbers","pages","psd","ai","sketch","fig"];
+let jszipPromise = null;
+
+function loadJSZip(){
+  if (window.JSZip) return Promise.resolve(window.JSZip);
+  if (!jszipPromise) {
+    jszipPromise = new Promise((resolve, reject) => {
+      const s = document.createElement("script");
+      s.src = "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js";
+      s.onload = () => resolve(window.JSZip);
+      s.onerror = () => { jszipPromise = null; reject(new Error("không tải được thư viện đọc zip, kiểm tra kết nối mạng")); };
+      document.head.appendChild(s);
+    });
+  }
+  return jszipPromise;
+}
+
+async function zipToText(f){
+  const JSZip = await loadJSZip();
+  const zip = await JSZip.loadAsync(f);
+  const entries = Object.values(zip.files)
+    .filter(e => !e.dir && !/(^|\/)(node_modules|\.git|__MACOSX)\//.test(e.name))
+    .sort((a, b) => a.name.localeCompare(b.name));
+  let text = "", count = 0, skipped = 0;
+  for (const e of entries) {
+    const ext = (e.name.split(".").pop() || "").toLowerCase();
+    if (BINARY_EXT.includes(ext)) { skipped++; continue; }
+    const bytes = await e.async("uint8array");
+    if (bytes.length > 200000 || bytes.includes(0)) { skipped++; continue; }
+    const chunk = "--- " + e.name + " ---\n" + new TextDecoder().decode(bytes) + "\n\n";
+    if (text.length + chunk.length > MAX_TEXT_CHARS) { skipped++; continue; }
+    text += chunk;
+    count++;
+  }
+  return {text, count, skipped};
+}
+
 async function processFile(f){
   const name = f.name;
   const ext = (name.split(".").pop() || "").toLowerCase();
@@ -420,16 +457,28 @@ async function processFile(f){
     const dataUrl = await readAsDataUrl(f);
     return {kind:"pdf", name, note: mb(f.size), parts:[{type:"file", file:{filename:name, file_data:dataUrl}}]};
   }
-  if (f.type.startsWith("text/") || TEXT_EXT.includes(ext)) {
-    let text = await f.text();
-    let note = "văn bản";
-    if (text.length > MAX_TEXT_CHARS) {
-      text = text.slice(0, MAX_TEXT_CHARS);
-      note += " (cắt còn 60.000 ký tự)";
-    }
-    return {kind:"text", name, note, text};
+  if (ext === "zip" || f.type === "application/zip" || f.type === "application/x-zip-compressed") {
+    const z = await zipToText(f);
+    if (!z.count) throw new Error("zip không có tệp văn bản nào để đọc");
+    let note = z.count + " tệp mã nguồn/văn bản";
+    if (z.skipped) note += ", bỏ qua " + z.skipped + " tệp";
+    return {kind:"text", name, note, text: z.text};
   }
-  throw new Error("định dạng chưa được hỗ trợ");
+  if (BINARY_EXT.includes(ext)) {
+    throw new Error("tệp nhị phân, không đọc được. Hãy nén chứa mã nguồn thành zip hoặc xuất ra .txt");
+  }
+
+  const head = new Uint8Array(await f.slice(0, 8000).arrayBuffer());
+  if (head.includes(0)) {
+    throw new Error("tệp nhị phân, không đọc được. Hãy nén chứa mã nguồn thành zip hoặc xuất ra .txt");
+  }
+  let text = await f.text();
+  let note = "văn bản";
+  if (text.length > MAX_TEXT_CHARS) {
+    text = text.slice(0, MAX_TEXT_CHARS);
+    note += " (cắt còn 60.000 ký tự)";
+  }
+  return {kind:"text", name, note, text};
 }
 
 function renderAttachments(){
