@@ -45,6 +45,16 @@ details summary{cursor:pointer;font-size:14px;font-weight:600}
 .tool{margin-bottom:10px}
 .tool a{color:var(--accent);font-size:14px}
 .err{color:var(--err)}
+.flow{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:12px}
+.step{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-bottom:1px dashed var(--border)}
+.step:last-child{border-bottom:0}
+.ico{width:22px;text-align:center;font-size:16px;line-height:1.4;flex:none}
+.step .label{font-weight:600;font-size:14px}
+.step .detail{font-size:12px;color:var(--muted);word-break:break-word}
+.step.run .ico,.step.run .label{color:var(--accent)}
+.step.done .ico{color:#8fe388}
+.step.error .ico,.step.error .label{color:var(--err)}
+.step.wait,.step.skip{opacity:.6}
 </style>
 </head>
 <body>
@@ -78,6 +88,7 @@ details summary{cursor:pointer;font-size:14px;font-weight:600}
     <div id="stateLine" class="small" style="margin-top:6px">Sẵn sàng</div>
   </div>
 
+  <div id="flow" class="flow" style="display:none"></div>
   <div id="result"></div>
 </section>
 
@@ -124,6 +135,8 @@ details summary{cursor:pointer;font-size:14px;font-weight:600}
     <input id="retries" type="number" min="0" max="2" value="1">
     <label for="delay">Nghỉ giữa các lượt gọi (giây)</label>
     <input id="delay" type="number" min="0" value="3">
+    <label for="maxTokens">Số token tối đa mỗi câu trả lời (256 đến 4096). Giảm số này để tiết kiệm credit, nhất là với Claude.</label>
+    <input id="maxTokens" type="number" min="256" max="4096" value="2000">
     <label for="frames">Số khung hình lấy từ mỗi video (1 đến 12)</label>
     <input id="frames" type="number" min="1" max="12" value="6">
     <label class="check"><input id="mediaAll" type="checkbox"> Gửi ảnh, video, PDF cho mọi lượt gọi (tốn hơn)</label>
@@ -189,7 +202,7 @@ document.querySelectorAll(".tab").forEach(b => b.onclick = () => {
 
 /* ---------- cài đặt lưu trên trình duyệt ---------- */
 
-["code","limit","delay","frames","visionModel","retries"].forEach(id => {
+["code","limit","delay","frames","visionModel","retries","maxTokens"].forEach(id => {
   const saved = localStorage.getItem("ta." + id);
   if (saved !== null) $(id).value = saved;
   $(id).addEventListener("change", e => localStorage.setItem("ta." + id, e.target.value.trim()));
@@ -207,6 +220,43 @@ $("limit").addEventListener("change", showUsed);
 function setStatus(msg){ $("status").textContent = msg; }
 function setState(msg){ $("stateLine").textContent = msg; }
 function step(msg){ currentSteps.push(msg); }
+
+let flow = [];
+let lastModel = "";
+const FLOW_STEPS = [
+  {key:"task", label:"Nhận việc"},
+  {key:"pick", label:"Chọn công cụ"},
+  {key:"draft", label:"Làm bản nháp"},
+  {key:"review", label:"Kiểm duyệt"},
+  {key:"final", label:"Kết quả cuối"}
+];
+const ICONS = {wait:"○", run:"●", done:"✔", error:"✖", skip:"–"};
+
+function flowReset(task){
+  flow = FLOW_STEPS.map(s => ({key:s.key, label:s.label, status:"wait", detail:""}));
+  flowSet("task", "done", task.length > 80 ? task.slice(0, 80) + " (rút gọn)" : task);
+}
+function flowSet(key, status, detail){
+  const s = flow.find(x => x.key === key);
+  if (!s) return;
+  s.status = status;
+  if (detail !== undefined) s.detail = detail;
+  renderFlow();
+}
+function flowFail(msg){
+  const running = flow.find(x => x.status === "run");
+  if (running) flowSet(running.key, "error", msg);
+  else flowSet("final", "error", msg);
+}
+function renderFlow(){
+  const box = $("flow");
+  if (!flow.length) { box.style.display = "none"; return; }
+  box.style.display = "block";
+  box.innerHTML = "<h2>Quy trình đang giao việc</h2>" + flow.map(s =>
+    `<div class="step ${s.status}"><span class="ico">${ICONS[s.status]}</span>` +
+    `<div><div class="label">${esc(s.label)}</div><div class="detail">${esc(s.detail || "")}</div></div></div>`
+  ).join("");
+}
 
 /* ---------- model theo nhóm ---------- */
 
@@ -511,7 +561,8 @@ $("files").addEventListener("change", async e => {
 /* ---------- gọi model qua proxy ---------- */
 
 async function callModel(model, msgs, plugins){
-  const body = {model, messages: msgs};
+  const maxTok = Math.max(256, Math.min(4096, +$("maxTokens").value || 2000));
+  const body = {model, messages: msgs, max_tokens: maxTok};
   if (plugins) body.plugins = plugins;
   const payload = JSON.stringify(body);
   if (payload.length > MAX_PAYLOAD_CHARS) {
@@ -523,10 +574,14 @@ async function callModel(model, msgs, plugins){
     body: payload,
     signal: abortCtl ? abortCtl.signal : undefined
   });
-  let data = {};
-  try { data = await res.json(); } catch (e) {}
+  let raw = "", data = {};
+  try { raw = await res.text(); data = JSON.parse(raw); } catch (e) {}
   if (!res.ok) {
-    throw new Error("HTTP " + res.status + ": " + ((data.error && data.error.message) || res.statusText));
+    let detail = (data.error && data.error.message) || "";
+    if (!detail && res.status === 504) detail = "máy chủ hết thời gian chờ, model đang chậm. Thử lại hoặc đổi model ở tab Cài đặt";
+    if (res.status === 402) detail = "số dư OpenRouter không đủ cho model này. Nạp thêm tại openrouter.ai/settings/credits, giảm Số token tối đa, hoặc chọn model miễn phí. Chi tiết: " + detail;
+    if (!detail) detail = res.statusText || raw.slice(0, 120) || "lỗi không rõ";
+    throw new Error("HTTP " + res.status + ": " + detail);
   }
   const choice = data.choices && data.choices[0];
   let text = choice && choice.message ? choice.message.content : "";
@@ -548,6 +603,7 @@ async function ask(agent, userText, media){
   setState("Đang làm: " + agent.name + " · " + model);
   bump();
   const r = await callModel(model, [{role:"system", content: agent.prompt}, {role:"user", content}], plugins);
+  lastModel = r.model;
   step(agent.name + " · model thực tế: " + r.model);
   return r.text.trim();
 }
@@ -595,34 +651,52 @@ async function runTask(task){
   const media = runMedia;
 
   step("Chọn: " + tool.name + " (" + CATEGORY_LABELS[tool.cat] + ") · " + pick.why);
+  flowSet("pick", "done", tool.name + " · " + CATEGORY_LABELS[tool.cat] + " · " + pick.why);
 
   if (tool.gen) {
+    flowSet("draft", "run", tool.name + " · " + spec.model + " · viết prompt ảnh");
     const prompt = (await ask(spec, buildUserText(task, "Chỉ trả về đúng một prompt tiếng Anh để tạo ảnh, không giải thích."), media)).slice(0, 900);
+    flowSet("draft", "done", "model thực tế: " + lastModel);
+    flowSet("review", "skip", "không áp dụng cho tạo ảnh");
+    flowSet("final", "done", "ảnh tạo từ prompt");
     return {kind:"image", tool, text: prompt, seed: Math.floor(Math.random() * 99999)};
   }
 
+  flowSet("draft", "run", tool.name + " · " + spec.model);
   let draft = await ask(spec, buildUserText(task, ""), media);
+  flowSet("draft", "done", "model thực tế: " + lastModel + " · " + draft.length + " ký tự");
   let final = draft;
 
   if (useReviewer) {
-    for (let attempt = 0; ; attempt++) {
+    let attempt = 0;
+    for (;;) {
+      flowSet("review", "run", "kiểm duyệt lần " + (attempt + 1) + " · " + reviewer.model);
       const rv = parseReview(await ask(reviewer, "Việc gốc: " + task + "\n\nBản nháp của " + tool.name + ":\n" + draft, []));
       if (rv.verdict === "pass") {
         final = rv.text || draft;
         step("Kiểm duyệt: đạt");
+        flowSet("review", "done", "đạt" + (attempt ? " sau " + attempt + " lần làm lại" : ""));
         break;
       }
       if (attempt >= maxRetry) {
         final = draft;
         step("Kiểm duyệt: chưa đạt, hết lượt làm lại nên dùng bản nháp hiện có");
+        flowSet("review", "done", "chưa đạt, hết lượt làm lại, dùng bản nháp hiện có");
         break;
       }
+      attempt++;
       step("Kiểm duyệt: yêu cầu làm lại · " + rv.text.slice(0, 200));
+      flowSet("review", "done", "yêu cầu làm lại lần " + attempt + ": " + rv.text.slice(0, 120));
+      flowSet("draft", "run", "làm lại lần " + attempt + " · " + spec.model);
       const retryMedia = $("mediaAll").checked ? media : [];
       draft = await ask(spec, buildUserText(task, "Cần sửa theo kiểm duyệt:\n" + rv.text + "\n\nBản nháp cũ:\n" + draft), retryMedia);
+      flowSet("draft", "done", "làm lại xong · model thực tế: " + lastModel);
       final = draft;
     }
+  } else {
+    flowSet("review", "skip", "đã tắt bước kiểm duyệt");
   }
+  flowSet("final", "done", "");
   return {kind:"text", tool, text: final};
 }
 
@@ -640,6 +714,7 @@ async function onRun(){
 
   running = true; stopRequested = false; callCount = 0; currentSteps = [];
   abortCtl = new AbortController();
+  flowReset(task);
   $("run").disabled = true; $("stop").disabled = false;
   $("result").innerHTML = '<div class="card small">Đang làm việc. Có thể mất một lúc.</div>';
 
@@ -649,6 +724,7 @@ async function onRun(){
   } catch (err) {
     const msg = err.name === "AbortError" ? "Đã dừng." : "Lỗi: " + err.message;
     step(msg);
+    flowFail(msg);
     $("result").innerHTML = `<div class="card err">${esc(msg)}</div>` + processCard();
   } finally {
     running = false; abortCtl = null;
@@ -730,6 +806,7 @@ $("loadModels").onclick = loadFreeVisionModels;
 /* ---------- khởi tạo ---------- */
 
 renderToolPick();
+renderFlow();
 renderToolFilters();
 renderModels();
 renderAttachments();
