@@ -3,58 +3,99 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Team Agent · nhóm AI</title>
+<title>Team Agent · 56 công cụ AI</title>
 <style>
-:root{--bg:#0f1220;--card:#181c30;--text:#e8eaf6;--muted:#9aa0c0;--accent:#c6f36b;--border:#2a2f4a;--field:#0c0f1c}
+:root{--bg:#0f1220;--card:#181c30;--text:#e8eaf6;--muted:#9aa0c0;--accent:#c6f36b;--border:#2a2f4a;--field:#0c0f1c;--err:#ff8a80}
 *{box-sizing:border-box}
-body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.5;padding:0 12px}
-header{position:sticky;top:0;background:var(--bg);padding:12px 0 8px;z-index:5;border-bottom:1px solid var(--border)}
-h1{font-size:18px;margin:0}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.5;padding:0 12px 24px}
+header{position:sticky;top:0;background:var(--bg);padding:12px 0 6px;z-index:5;border-bottom:1px solid var(--border)}
+h1{font-size:18px;margin:0 0 8px}
 h2{font-size:15px;margin:0 0 8px}
-details{background:var(--card);border:1px solid var(--border);border-radius:12px;margin:10px 0;padding:10px 12px}
-summary{cursor:pointer;font-weight:600;font-size:15px}
-.section{margin-top:12px}
+.tabs{display:flex;gap:6px}
+.tab{flex:1;padding:9px;border:0;border-radius:8px;background:#2e3450;color:var(--text);font-size:14px;font-weight:600}
+.tab.on{background:var(--accent);color:#111}
+.pane{display:none;margin-top:12px}
+.pane.on{display:block}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:12px}
 label{display:block;font-size:13px;color:var(--muted);margin:10px 0 4px}
-input,textarea{width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--field);color:var(--text);font-size:16px;font-family:inherit}
-textarea{min-height:60px;resize:vertical}
+input,textarea,select{width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--field);color:var(--text);font-size:16px;font-family:inherit}
+textarea{min-height:90px;resize:vertical}
 button{width:100%;padding:12px;margin-top:8px;border:0;border-radius:10px;background:var(--accent);color:#111;font-size:16px;font-weight:600}
 button.alt{background:#2e3450;color:var(--text)}
 button:disabled{opacity:.5}
 .row{display:flex;gap:8px;align-items:center}
 .row>*{flex:1}
+.row.between{justify-content:space-between}
 .small{font-size:12px;color:var(--muted)}
-.agent{border:1px solid var(--border);border-radius:10px;padding:10px;margin-top:10px}
-.agent-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
-.agent-head label{margin:0;color:var(--text);display:flex;gap:6px;align-items:center}
-.agent-head input{width:20px;height:20px;margin:0}
 .check{display:flex;gap:8px;align-items:center;margin-top:10px;font-size:14px;color:var(--text)}
 .check input{width:20px;height:20px;margin:0}
-#chat{padding:8px 0 16px;min-height:40vh}
-.msg{max-width:90%;padding:10px 12px;border-radius:14px;margin:8px 0;background:var(--card);border:1px solid var(--border)}
-.msg.me{margin-left:auto;background:#24331c;border-color:#3f5a2a}
-.msg.sys{max-width:100%;background:transparent;border-style:dashed;color:var(--muted);font-size:13px;text-align:center}
-.who{font-size:12px;color:var(--muted);margin-bottom:4px}
-.txt{white-space:pre-wrap;word-break:break-word;font-size:15px}
-.files{font-size:12px;color:var(--muted);margin-top:6px}
-.composer{position:sticky;bottom:0;background:var(--bg);border-top:1px solid var(--border);padding:8px 0 calc(8px + env(safe-area-inset-bottom,0px))}
-.filebtn{display:inline-block;padding:10px 14px;border-radius:10px;background:#2e3450;color:var(--text);font-size:15px;font-weight:600;cursor:pointer;margin:0 0 8px}
+.filebtn{display:block;text-align:center;padding:12px;border-radius:10px;background:#2e3450;color:var(--text);font-size:15px;font-weight:600;cursor:pointer;margin:10px 0 0}
 #files{display:none}
 .att{display:flex;justify-content:space-between;align-items:center;gap:8px;border:1px solid var(--border);border-radius:8px;padding:6px 10px;margin-top:6px;font-size:13px;word-break:break-all}
 .att small{color:var(--muted)}
 .att button{width:auto;margin:0;padding:2px 10px;background:#3a2030;color:#ffb4b4;font-size:16px}
-.status{font-size:12px;color:var(--accent);min-height:16px}
-.composer .row button{margin-top:6px}
+.status{font-size:12px;color:var(--accent);min-height:16px;margin-top:4px}
+.result .who{font-size:12px;color:var(--muted);margin-bottom:6px}
+.txt{white-space:pre-wrap;word-break:break-word;font-size:15px}
+.pic{width:100%;border-radius:10px;border:1px solid var(--border);margin-bottom:8px}
+pre{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;white-space:pre-wrap;word-break:break-word;background:var(--field);border-radius:8px;padding:10px;margin:8px 0 0;max-height:300px;overflow:auto}
+details summary{cursor:pointer;font-size:14px;font-weight:600}
+.badge{font-size:11px;padding:2px 8px;border-radius:999px;background:#2e3450;color:var(--text);white-space:nowrap}
+.badge.paid{background:#4a3220;color:#ffd19a}
+.tool{margin-bottom:10px}
+.tool a{color:var(--accent);font-size:14px}
+.err{color:var(--err)}
 </style>
 </head>
 <body>
 <header>
-  <h1>Team Agent · nhóm AI</h1>
-  <div class="small" id="stateLine">Sẵn sàng</div>
+  <h1>Team Agent · 56 công cụ AI</h1>
+  <nav class="tabs">
+    <button class="tab on" data-tab="work">Làm việc</button>
+    <button class="tab" data-tab="tools">Công cụ</button>
+    <button class="tab" data-tab="settings">Cài đặt</button>
+  </nav>
 </header>
 
-<details>
-  <summary>Cài đặt và đội AI</summary>
-  <div class="section">
+<section id="work" class="pane on">
+  <div class="card">
+    <label for="task">Việc cần làm</label>
+    <textarea id="task" placeholder="Ví dụ: Viết code Python tính điểm trung bình, hoặc vẽ logo quán cà phê tối giản"></textarea>
+
+    <label for="toolPick">Giao cho</label>
+    <select id="toolPick"></select>
+    <div class="small">Để "Tự động" nếu muốn web tự chọn công cụ có mô tả khớp nhất với việc của bạn. Agent Claude không được chọn tự động vì tốn tiền.</div>
+
+    <label class="filebtn" for="files">📎 Thêm ảnh, video, PDF, tệp văn bản</label>
+    <input id="files" type="file" multiple accept="image/*,video/*,application/pdf,.txt,.md,.csv,.json,.js,.ts,.py,.html,.css,.xml,.yml,.yaml,.log,.sql">
+    <div id="attList"></div>
+    <div id="status" class="status"></div>
+
+    <div class="row">
+      <button id="run">Chạy</button>
+      <button id="stop" class="alt" disabled>Dừng</button>
+    </div>
+    <div id="stateLine" class="small" style="margin-top:6px">Sẵn sàng</div>
+  </div>
+
+  <div id="result"></div>
+</section>
+
+<section id="tools" class="pane">
+  <div class="card">
+    <p class="small" style="margin-top:0">56 công cụ trong danh sách của bạn, mỗi công cụ là một agent trong web. Agent dùng model qua OpenRouter để làm theo chức năng đã ghi. Đây không phải sản phẩm thật. Bấm "Giao việc" để chọn công cụ và chuyển sang tab Làm việc.</p>
+    <label for="toolSearch">Tìm công cụ</label>
+    <input id="toolSearch" placeholder="Ví dụ: ảnh, code, giọng nói, slide">
+    <label for="toolCat">Nhóm</label>
+    <select id="toolCat"></select>
+    <div id="toolCount" class="small" style="margin-top:6px"></div>
+  </div>
+  <div id="toolList"></div>
+</section>
+
+<section id="settings" class="pane">
+  <div class="card">
+    <h2>Kết nối</h2>
     <label for="code">Mã truy cập</label>
     <input id="code" type="password" autocomplete="off" placeholder="Mã bạn đã đặt trên Vercel">
     <label for="limit">Giới hạn lượt mỗi ngày (đếm trên trình duyệt này)</label>
@@ -63,71 +104,58 @@ button:disabled{opacity:.5}
       <div><div class="small">Hôm nay đã dùng</div><strong id="used">0</strong></div>
       <button id="resetCount" class="alt">Đặt lại đếm</button>
     </div>
-    <label for="maxTurns">Số lượt tối đa cho mỗi lần gửi (1 đến 30)</label>
-    <input id="maxTurns" type="number" min="1" max="30" value="8">
-    <label for="delay">Nghỉ giữa các lượt (giây)</label>
-    <input id="delay" type="number" min="0" value="3">
-    <label for="frames">Số khung hình lấy từ mỗi video (1 đến 12)</label>
-    <input id="frames" type="number" min="1" max="12" value="6">
     <label for="visionModel">Model nhận ảnh, video, PDF</label>
     <input id="visionModel" list="modelList" placeholder="Bấm nút bên dưới để tải danh sách">
     <datalist id="modelList"></datalist>
     <button id="loadModels" class="alt">Tải model miễn phí có nhận ảnh</button>
-    <label class="check"><input id="mediaAll" type="checkbox"> Gửi ảnh, video, PDF cho mọi lượt (tốn hơn)</label>
   </div>
 
-  <div class="section">
-    <h2>Đội AI</h2>
-    <div class="small">Bật agent nào thì agent đó tham gia nhóm. Agent có thể nhắc nhau bằng @handle, ví dụ @reviewer.</div>
-    <div id="agents"></div>
-    <div class="row">
-      <button id="saveAgents" class="alt">Lưu đội</button>
-      <button id="resetAgents" class="alt">Khôi phục mặc định</button>
-    </div>
+  <div class="card">
+    <h2>Model theo nhóm</h2>
+    <div class="small">Mỗi nhóm dùng model này nếu công cụ không đặt model riêng. Mặc định là openrouter/free (miễn phí). Model Claude là trả phí.</div>
+    <div id="models"></div>
+    <button id="resetModels" class="alt">Khôi phục model mặc định</button>
   </div>
 
-  <div class="section">
-    <button id="resetChat" class="alt">Xóa cuộc trò chuyện</button>
+  <div class="card">
+    <h2>Quy trình làm việc</h2>
+    <label class="check"><input id="useReviewer" type="checkbox" checked> Có bước kiểm duyệt trước khi trả kết quả</label>
+    <label for="retries">Số lần làm lại tối đa khi kiểm duyệt chưa đạt (0 đến 2)</label>
+    <input id="retries" type="number" min="0" max="2" value="1">
+    <label for="delay">Nghỉ giữa các lượt gọi (giây)</label>
+    <input id="delay" type="number" min="0" value="3">
+    <label for="frames">Số khung hình lấy từ mỗi video (1 đến 12)</label>
+    <input id="frames" type="number" min="1" max="12" value="6">
+    <label class="check"><input id="mediaAll" type="checkbox"> Gửi ảnh, video, PDF cho mọi lượt gọi (tốn hơn)</label>
   </div>
-</details>
+</section>
 
-<main id="chat"></main>
-
-<div class="composer">
-  <div id="attList"></div>
-  <div id="status" class="status"></div>
-  <label class="filebtn" for="files">📎 Thêm ảnh, video, PDF, tệp văn bản</label>
-  <input id="files" type="file" multiple accept="image/*,video/*,application/pdf,.txt,.md,.csv,.json,.js,.ts,.py,.html,.css,.xml,.yml,.yaml,.log,.sql">
-  <textarea id="input" placeholder="Viết việc cần làm. Nhắc agent bằng @handle, ví dụ: @reviewer kiểm tra giúp mình"></textarea>
-  <div class="row">
-    <button id="send">Gửi</button>
-    <button id="stop" class="alt" disabled>Dừng</button>
-  </div>
-</div>
-
+<script src="catalog.js"></script>
 <script>
-const DEFAULT_AGENTS = [
-  {handle:"planner", name:"Chia việc", model:"openrouter/free", on:true,
-   prompt:"Bạn chia việc. Tách yêu cầu thành các bước ngắn, rõ ràng, có thứ tự."},
-  {handle:"researcher", name:"Nghiên cứu", model:"openrouter/free", on:false,
-   prompt:"Bạn nghiên cứu. Nêu thông tin, ý tưởng và rủi ro liên quan đến việc cần làm."},
-  {handle:"builder", name:"Thực hiện", model:"openrouter/free", on:true,
-   prompt:"Bạn thực hiện. Dựa trên các bước và thông tin trong nhóm, viết kết quả cụ thể và hoàn chỉnh."},
-  {handle:"reviewer", name:"Kiểm duyệt", model:"openrouter/free", on:true,
-   prompt:"Bạn kiểm duyệt. Kiểm tra kết quả có đúng yêu cầu không, nêu rõ phần sai hoặc thiếu và đề xuất cách sửa."},
-  {handle:"editor", name:"Tổng hợp", model:"openrouter/free", on:false,
-   prompt:"Bạn tổng hợp. Gộp các đóng góp thành một kết quả cuối gọn, dễ dùng."},
-  {handle:"coder", name:"Viết code", model:"openrouter/free", on:false,
-   prompt:"Bạn là lập trình viên. Viết code gọn, chú thích ngắn khi cần."},
-  {handle:"polisher", name:"Biên tập", model:"openrouter/free", on:false,
-   prompt:"Bạn biên tập. Sửa câu chữ cho rõ ràng, tự nhiên, đúng giọng văn."},
-  {handle:"tester", name:"Kiểm tra lỗi", model:"openrouter/free", on:false,
-   prompt:"Bạn kiểm tra lỗi logic và số liệu. Liệt kê lỗi nếu có."},
-  {handle:"critic", name:"Phản biện", model:"openrouter/free", on:false,
-   prompt:"Bạn phản biện. Chỉ ra điểm yếu và phương án tốt hơn nếu có."},
-  {handle:"shortener", name:"Rút gọn", model:"openrouter/free", on:false,
-   prompt:"Bạn rút gọn. Viết lại kết quả ngắn nhất nhưng vẫn đủ ý."}
-];
+const REVIEW_PROMPT = "Bạn là người kiểm duyệt cuối cùng. Đọc việc gốc và bản nháp. " +
+  "Nếu bản nháp đạt yêu cầu, bắt đầu câu trả lời bằng [ĐẠT] rồi viết bản cuối hoàn chỉnh, không kèm nhận xét. " +
+  "Nếu chưa đạt, bắt đầu bằng [LÀM LẠI] rồi nêu ngắn gọn cần sửa gì. Trả lời bằng tiếng Việt.";
+
+const DEFAULT_MODELS = {
+  code:"openrouter/free", writing:"openrouter/free", study:"openrouter/free",
+  research:"openrouter/free", image:"openrouter/free", media:"openrouter/free",
+  claude:"anthropic/claude-sonnet-4.5", reviewer:"openrouter/free"
+};
+const MODEL_LABELS = {
+  code:"Lập trình", writing:"Viết văn", study:"Học tập", research:"Nghiên cứu & thuyết trình",
+  image:"Ảnh & thiết kế", media:"Video & âm thanh", claude:"Claude (trả phí)", reviewer:"Kiểm duyệt"
+};
+
+const CAT_KEYS = ["code","writing","study","research","image","media"];
+const RULES = {
+  code: ["code","lập trình","lỗi","bug","debug","python","javascript","java","html","css","sql","hàm","script","api","ứng dụng","thuật toán","sửa lỗi","web"],
+  writing: ["viết","bài văn","nghị luận","email","diễn đạt","sửa câu","caption","bài đăng","blog","đoạn văn","luận","dịch","biên tập","thư"],
+  study: ["giải","bài tập","toán","phương trình","ôn thi","học","từ vựng","ngữ pháp","giải thích","công thức","vật lý","hóa","flashcard","đề thi"],
+  research: ["nghiên cứu","tìm hiểu","so sánh","tổng quan","phân tích","xu hướng","báo cáo","slide","thuyết trình","tài liệu","khoa học","ưu nhược","đánh giá"],
+  image: ["vẽ","ảnh","hình","tranh","poster","logo","minh họa","thiết kế","banner","avatar","thumbnail","photo","image"],
+  media: ["video","kịch bản","lời thoại","giọng","âm thanh","nhạc","podcast","phụ đề","reels","tiktok","storyboard","lồng tiếng","voice"]
+};
+const STOP = new Set(["công","cụ","năng","chức","dụng","ai","và","của","cho","các","một","có","để","với","trong","những","này","khi","từ","về","được","không","bạn","tôi","mình","hãy","giúp","làm","ra","vào","là","thì","đó","sao","gì","nào","bằng","theo","nên","ở","trên","dưới","tên","nhiều","ngắn","gọn","the","and","for","with"]);
 
 const TEXT_EXT = ["txt","md","csv","json","js","ts","py","html","css","xml","yml","yaml","log","sql"];
 const KIND_LABEL = {image:"Ảnh", video:"Video", pdf:"PDF", text:"Văn bản"};
@@ -145,113 +173,162 @@ const usageKey = () => "ta.used." + today();
 const used = () => +(localStorage.getItem(usageKey()) || 0);
 const limit = () => Math.max(1, +$("limit").value || 50);
 const code = () => $("code").value.trim();
+const toolByKey = k => CATALOG.find(t => t.key === k);
 
-let agents = loadAgents();
-let messages = loadChat();
 let pending = [];
 let running = false, stopRequested = false, abortCtl = null;
+let currentSteps = [], callCount = 0;
+let runFileText = "", runMedia = [];
+
+/* ---------- tab ---------- */
+
+document.querySelectorAll(".tab").forEach(b => b.onclick = () => {
+  document.querySelectorAll(".tab").forEach(x => x.classList.toggle("on", x === b));
+  document.querySelectorAll(".pane").forEach(p => p.classList.toggle("on", p.id === b.dataset.tab));
+});
 
 /* ---------- cài đặt lưu trên trình duyệt ---------- */
 
-["code","limit","maxTurns","delay","frames","visionModel"].forEach(id => {
+["code","limit","delay","frames","visionModel","retries"].forEach(id => {
   const saved = localStorage.getItem("ta." + id);
   if (saved !== null) $(id).value = saved;
   $(id).addEventListener("change", e => localStorage.setItem("ta." + id, e.target.value.trim()));
 });
-const mediaSaved = localStorage.getItem("ta.mediaAll");
-if (mediaSaved !== null) $("mediaAll").checked = mediaSaved === "1";
-$("mediaAll").addEventListener("change", e => localStorage.setItem("ta.mediaAll", e.target.checked ? "1" : "0"));
+["mediaAll","useReviewer"].forEach(id => {
+  const saved = localStorage.getItem("ta." + id);
+  if (saved !== null) $(id).checked = saved === "1";
+  $(id).addEventListener("change", e => localStorage.setItem("ta." + id, e.target.checked ? "1" : "0"));
+});
 
 function showUsed(){ $("used").textContent = used() + " / " + limit(); }
 function bump(){ localStorage.setItem(usageKey(), used() + 1); showUsed(); }
 $("resetCount").onclick = () => { localStorage.removeItem(usageKey()); showUsed(); };
 $("limit").addEventListener("change", showUsed);
-
 function setStatus(msg){ $("status").textContent = msg; }
 function setState(msg){ $("stateLine").textContent = msg; }
+function step(msg){ currentSteps.push(msg); }
 
-/* ---------- đội AI ---------- */
+/* ---------- model theo nhóm ---------- */
 
-function loadAgents(){
-  try {
-    const s = JSON.parse(localStorage.getItem("ta.agents"));
-    if (Array.isArray(s) && s.length === DEFAULT_AGENTS.length) return s;
-  } catch (e) {}
-  return clone(DEFAULT_AGENTS);
+function getModels(){
+  try { return Object.assign({}, DEFAULT_MODELS, JSON.parse(localStorage.getItem("ta.models") || "{}")); }
+  catch (e) { return Object.assign({}, DEFAULT_MODELS); }
 }
-function saveAgents(){ localStorage.setItem("ta.agents", JSON.stringify(agents)); }
-
-function renderAgents(){
-  $("agents").innerHTML = agents.map((a, i) => `
-    <div class="agent">
-      <div class="agent-head">
-        <strong>@${esc(a.handle)} · ${esc(a.name)}</strong>
-        <label><input type="checkbox" data-i="${i}" data-k="on" ${a.on ? "checked" : ""}> Bật</label>
-      </div>
-      <label>Model (ID trên OpenRouter)</label>
-      <input data-i="${i}" data-k="model" value="${esc(a.model)}">
-      <label>Vai và cách làm việc</label>
-      <textarea data-i="${i}" data-k="prompt">${esc(a.prompt)}</textarea>
-    </div>`).join("");
+function renderModels(){
+  const m = getModels();
+  $("models").innerHTML = Object.keys(DEFAULT_MODELS).map(k =>
+    `<label>${esc(MODEL_LABELS[k])}</label><input data-m="${k}" list="modelList" value="${esc(m[k])}">`
+  ).join("");
 }
-function onAgentEdit(e){
-  const i = +e.target.dataset.i, k = e.target.dataset.k;
-  if (isNaN(i) || !k) return;
-  agents[i][k] = k === "on" ? e.target.checked : e.target.value;
+function saveModels(){
+  const m = {};
+  document.querySelectorAll("#models input").forEach(i => { m[i.dataset.m] = i.value.trim() || DEFAULT_MODELS[i.dataset.m]; });
+  localStorage.setItem("ta.models", JSON.stringify(m));
 }
-$("agents").addEventListener("input", onAgentEdit);
-$("agents").addEventListener("change", onAgentEdit);
-$("saveAgents").onclick = () => { saveAgents(); alert("Đã lưu đội AI."); };
-$("resetAgents").onclick = () => {
-  if (!confirm("Khôi phục đội AI mặc định?")) return;
-  agents = clone(DEFAULT_AGENTS);
-  renderAgents();
-  saveAgents();
-};
+$("models").addEventListener("change", saveModels);
+$("resetModels").onclick = () => { localStorage.removeItem("ta.models"); renderModels(); };
 
-function agentLabel(handle){
-  const a = agents.find(x => x.handle === handle);
-  return a ? a.name : handle;
+function modelFor(tool){
+  const m = getModels();
+  return tool.paid ? m.claude : (m[tool.cat] || "openrouter/free");
 }
 
-/* ---------- lưu cuộc trò chuyện ---------- */
+/* ---------- chọn công cụ ---------- */
 
-function loadChat(){
-  try {
-    const s = JSON.parse(localStorage.getItem("ta.chat"));
-    if (Array.isArray(s)) return s;
-  } catch (e) {}
-  return [];
-}
-function saveChat(){
-  const light = messages.map(({media, ...rest}) => rest);
-  localStorage.setItem("ta.chat", JSON.stringify(light.slice(-60)));
+function tokens(s){
+  return new Set(s.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").split(" ").filter(w => w.length >= 2 && !STOP.has(w)));
 }
 
-function renderMessages(){
-  const box = $("chat");
-  if (!messages.length) {
-    box.innerHTML = '<div class="small" style="text-align:center;margin-top:24px">Gửi việc cần làm để nhóm bắt đầu. Các agent sẽ đọc và trả lời nhau.</div>';
-    return;
+function scoreText(text, kws){
+  const t = " " + text.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ") + " ";
+  return kws.reduce((s, k) => s + (t.includes(" " + k + " ") ? 1 : 0), 0);
+}
+
+function classify(text){
+  let best = "research", top = 0;
+  for (const k of CAT_KEYS) {
+    const s = scoreText(text, RULES[k]);
+    if (s > top) { top = s; best = k; }
   }
-  box.innerHTML = messages.map(m => {
-    if (m.from === "system") return `<div class="msg sys">${esc(m.text)}</div>`;
-    const isMe = m.from === "user";
-    const who = isMe ? "Bạn" : "@" + m.from + " · " + agentLabel(m.from) + (m.model ? " · " + m.model : "");
-    const files = (m.files && m.files.length)
-      ? `<div class="files">${m.files.map(f => "📎 " + esc(f.name)).join("<br>")}</div>` : "";
-    return `<div class="msg ${isMe ? "me" : ""}"><div class="who">${esc(who)}</div><div class="txt">${esc(m.text)}</div>${files}</div>`;
-  }).join("");
-  window.scrollTo(0, document.body.scrollHeight);
+  return best;
 }
 
-function sys(text){
-  messages.push({from:"system", text});
-  saveChat();
-  renderMessages();
+function autoPick(task){
+  const tt = tokens(task);
+  const taskCat = classify(task);
+  let best = null, bestScore = 0, bestHits = [];
+  for (const t of CATALOG) {
+    if (t.paid) continue;
+    const ft = tokens(t.func + " " + t.name);
+    const hits = [...tt].filter(w => ft.has(w));
+    let score = hits.length;
+    if ([...tokens(t.name)].some(w => tt.has(w))) score += 2;
+    if (t.cat === taskCat) score += 2;
+    if (score > bestScore) { best = t; bestScore = score; bestHits = hits; }
+  }
+  if (best && bestScore > 0) {
+    return {tool: best, why: bestHits.length ? "mô tả khớp với: " + [...new Set(bestHits)].slice(0, 6).join(", ") : "theo nhóm " + CATEGORY_LABELS[taskCat]};
+  }
+  const cat = classify(task);
+  return {tool: CATALOG.find(t => t.cat === cat && !t.paid), why: "không có mô tả khớp rõ, chọn theo nhóm " + CATEGORY_LABELS[cat]};
 }
 
-/* ---------- xử lý tệp đính kèm ---------- */
+function chooseTool(task){
+  const pick = $("toolPick").value;
+  if (pick === "auto") return autoPick(task);
+  return {tool: toolByKey(pick), why: "bạn chọn thủ công"};
+}
+
+function renderToolPick(){
+  let html = '<option value="auto">Tự động chọn công cụ giỏi nhất</option>';
+  for (const k of CAT_KEYS) {
+    html += `<optgroup label="${esc(CATEGORY_LABELS[k])}">` +
+      CATALOG.filter(t => t.cat === k).map(t =>
+        `<option value="${t.key}">${esc(t.name)}${t.paid ? " (trả phí)" : ""}</option>`).join("") +
+      "</optgroup>";
+  }
+  $("toolPick").innerHTML = html;
+}
+
+function renderToolFilters(){
+  $("toolCat").innerHTML = '<option value="">Tất cả nhóm</option>' +
+    CAT_KEYS.map(k => `<option value="${k}">${esc(CATEGORY_LABELS[k])}</option>`).join("");
+}
+
+function renderTools(){
+  const q = $("toolSearch").value.trim().toLowerCase();
+  const cat = $("toolCat").value;
+  const items = CATALOG.filter(t =>
+    (!cat || t.cat === cat) &&
+    (!q || (t.name + " " + t.func + " " + t.free).toLowerCase().includes(q))
+  );
+  $("toolCount").textContent = "Hiện " + items.length + " / " + CATALOG.length + " công cụ";
+  $("toolList").innerHTML = items.map(t => `
+    <div class="card tool">
+      <div class="row between">
+        <strong>${esc(t.name)}</strong>
+        <span class="badge">${esc(CATEGORY_LABELS[t.cat])}</span>
+      </div>
+      ${t.paid ? '<div class="small"><span class="badge paid">Trả phí</span></div>' : ""}
+      <div class="small">${esc(t.func)}</div>
+      <div class="small">Gói miễn phí: ${esc(t.free)}</div>
+      <div class="row" style="margin-top:6px">
+        <button class="alt" data-give="${t.key}">Giao việc</button>
+        <a href="${esc(t.url)}" target="_blank" rel="noopener" style="align-self:center">Trang chính thức</a>
+      </div>
+    </div>`).join("") || '<div class="small">Không có công cụ nào khớp.</div>';
+}
+$("toolSearch").addEventListener("input", renderTools);
+$("toolCat").addEventListener("change", renderTools);
+$("toolList").addEventListener("click", e => {
+  const k = e.target.dataset.give;
+  if (!k) return;
+  $("toolPick").value = k;
+  document.querySelector('.tab[data-tab="work"]').click();
+  window.scrollTo(0, 0);
+});
+
+/* ---------- tệp đính kèm ---------- */
 
 function once(el, evt){
   return new Promise((resolve, reject) => {
@@ -328,7 +405,6 @@ async function processFile(f){
     const dataUrl = await imageToDataUrl(f);
     return {kind:"image", name, note: mb(f.size), parts:[{type:"image_url", image_url:{url:dataUrl}}]};
   }
-
   if (f.type.startsWith("video/")) {
     const n = Math.max(1, Math.min(12, +$("frames").value || 6));
     const frames = await videoFrames(f, n);
@@ -339,13 +415,11 @@ async function processFile(f){
     });
     return {kind:"video", name, note: n + " khung hình · " + mb(f.size), parts};
   }
-
   if (f.type === "application/pdf" || ext === "pdf") {
     if (f.size > MAX_PDF_BYTES) throw new Error("PDF lớn hơn 3 MB, hãy thử tệp nhỏ hơn");
     const dataUrl = await readAsDataUrl(f);
     return {kind:"pdf", name, note: mb(f.size), parts:[{type:"file", file:{filename:name, file_data:dataUrl}}]};
   }
-
   if (f.type.startsWith("text/") || TEXT_EXT.includes(ext)) {
     let text = await f.text();
     let note = "văn bản";
@@ -355,20 +429,14 @@ async function processFile(f){
     }
     return {kind:"text", name, note, text};
   }
-
   throw new Error("định dạng chưa được hỗ trợ");
 }
 
 function renderAttachments(){
-  if (!pending.length) {
-    $("attList").innerHTML = "";
-    return;
-  }
   $("attList").innerHTML = pending.map((a, i) =>
     `<div class="att"><span>${esc(KIND_LABEL[a.kind])}: ${esc(a.name)} <small>${esc(a.note)}</small></span><button data-i="${i}" aria-label="Xóa">×</button></div>`
   ).join("");
 }
-
 $("attList").addEventListener("click", e => {
   const i = e.target.dataset.i;
   if (i !== undefined) {
@@ -376,7 +444,6 @@ $("attList").addEventListener("click", e => {
     renderAttachments();
   }
 });
-
 $("files").addEventListener("change", async e => {
   const files = Array.from(e.target.files || []);
   e.target.value = "";
@@ -392,50 +459,7 @@ $("files").addEventListener("change", async e => {
   setStatus("");
 });
 
-/* ---------- định tuyến giữa các agent ---------- */
-
-function pickNext(text, current, enabled){
-  if (/\[XONG\]/i.test(text)) return null;
-  const mentions = (text.match(/@[a-z]+/gi) || []).map(s => s.slice(1).toLowerCase()).reverse();
-  for (const h of mentions) {
-    if (h === current.handle) continue;
-    const hit = enabled.find(a => a.handle === h);
-    if (hit) return hit;
-  }
-  if (!enabled.length) return null;
-  if (enabled.length === 1 && current.handle === enabled[0].handle) return null;
-  const idx = enabled.findIndex(a => a.handle === current.handle);
-  return enabled[(idx + 1) % enabled.length];
-}
-
-function protocolText(enabled){
-  const list = enabled.map(a => "@" + a.handle + " (" + a.name + ")").join(", ");
-  return "Bạn đang trong nhóm chat AI cùng: " + list + ". " +
-    "Đọc hội thoại trước khi trả lời và không lặp lại nguyên văn tin nhắn của người khác. " +
-    "Nếu cần một agent khác làm tiếp, kết thúc bằng một dòng có @handle của agent đó, ví dụ @reviewer. " +
-    "Nếu kết quả đã đạt yêu cầu và không còn việc gì, kết thúc bằng [XONG]. " +
-    "Không tự nhắc đến chính mình. Trả lời bằng tiếng Việt, ngắn gọn.";
-}
-
-function transcriptFor(current){
-  const recent = messages.filter(m => m.from !== "system").slice(-20);
-  const lines = recent.map(m => {
-    if (m.from === "user") {
-      const names = m.files && m.files.length ? "\n(đính kèm: " + m.files.map(f => f.name).join(", ") + ")" : "";
-      return "[Người dùng]: " + m.text + names + (m.fileText ? "\n\n" + m.fileText : "");
-    }
-    return "[@" + m.from + "]: " + m.text;
-  });
-  return "Hội thoại:\n\n" + lines.join("\n\n") +
-    "\n\nĐến lượt bạn là @" + current.handle + " (" + current.name + "). Hãy trả lời theo vai của bạn.";
-}
-
-function buildContent(text, media){
-  if (!media.length) return text;
-  return [{type:"text", text}, ...media];
-}
-
-/* ---------- gọi API qua proxy ---------- */
+/* ---------- gọi model qua proxy ---------- */
 
 async function callModel(model, msgs, plugins){
   const body = {model, messages: msgs};
@@ -444,7 +468,6 @@ async function callModel(model, msgs, plugins){
   if (payload.length > MAX_PAYLOAD_CHARS) {
     throw new Error("nội dung quá lớn cho máy chủ, hãy bớt ảnh, khung hình hoặc tệp");
   }
-
   const res = await fetch("/api/chat", {
     method: "POST",
     headers: {"Content-Type": "application/json", "X-Access-Code": code()},
@@ -462,115 +485,192 @@ async function callModel(model, msgs, plugins){
   return {text, model: data.model || model};
 }
 
-/* ---------- vòng trao đổi giữa các agent ---------- */
+function delayMs(){ return Math.max(0, +$("delay").value || 0) * 1000; }
 
-async function runRound(media, userText){
-  const enabled = agents.filter(a => a.on);
-  const maxTurns = Math.max(1, Math.min(30, +$("maxTurns").value || 8));
-  const delayMs = Math.max(0, +$("delay").value || 0) * 1000;
-  const mediaAll = $("mediaAll").checked;
-  const visionModel = $("visionModel").value.trim();
-  const hasPdf = media.some(p => p.type === "file");
+async function ask(agent, userText, media){
+  if (callCount > 0 && delayMs()) await sleep(delayMs());
+  callCount++;
+  const hasMedia = media && media.length > 0;
+  const vision = $("visionModel").value.trim();
+  const model = hasMedia && vision ? vision : (agent.model || "openrouter/free").trim();
+  const plugins = hasMedia && media.some(p => p.type === "file") ? [{id:"file-parser", pdf:{engine:"pdf-text"}}] : null;
+  const content = hasMedia ? [{type:"text", text: userText}, ...media] : userText;
 
-  running = true; stopRequested = false; abortCtl = new AbortController();
-  $("send").disabled = true; $("stop").disabled = false;
+  setState("Đang làm: " + agent.name + " · " + model);
+  bump();
+  const r = await callModel(model, [{role:"system", content: agent.prompt}, {role:"user", content}], plugins);
+  step(agent.name + " · model thực tế: " + r.model);
+  return r.text.trim();
+}
 
-  let current = pickNext(userText, {handle:"user"}, enabled) || enabled[0];
-  let finished = false;
+function buildUserText(task, extra){
+  let text = "Việc: " + task;
+  if (runFileText) text += "\n\n" + runFileText;
+  if (extra) text += "\n\n" + extra;
+  return text;
+}
 
-  for (let turn = 0; turn < maxTurns; turn++) {
-    if (stopRequested) { sys("Đã dừng theo yêu cầu."); finished = true; break; }
-    if (used() >= limit()) { sys("Đã đạt giới hạn lượt trong ngày theo cài đặt."); finished = true; break; }
+function parseReview(s){
+  const t = s.trim();
+  if (/^\[LÀM LẠI\]/i.test(t)) return {verdict:"redo", text: t.replace(/^\[LÀM LẠI\]/i, "").trim()};
+  if (/^\[ĐẠT\]/i.test(t)) return {verdict:"pass", text: t.replace(/^\[ĐẠT\]/i, "").trim()};
+  return {verdict:"pass", text: t};
+}
 
-    const sendMedia = media.length > 0 && (mediaAll || turn === 0);
-    const model = sendMedia && visionModel ? visionModel : (current.model || "openrouter/free").trim();
-    const plugins = sendMedia && hasPdf ? [{id:"file-parser", pdf:{engine:"pdf-text"}}] : null;
-    const content = buildContent(transcriptFor(current), sendMedia ? media : []);
-    const toSend = [
-      {role:"system", content: current.prompt + "\n\n" + protocolText(enabled)},
-      {role:"user", content}
-    ];
+function toolPrompt(t){
+  return `Bạn đảm nhiệm chức năng của công cụ ${t.name}: ${t.func} ` +
+    "Làm đúng việc người dùng yêu cầu theo chức năng này. Trả lời bằng tiếng Việt, ngắn gọn, có cấu trúc khi cần. " +
+    `Bạn là một model AI mô phỏng chức năng của ${t.name}, không phải sản phẩm ${t.name} thật. ` +
+    "Nếu việc cần một phần mềm khác để xử lý file thật, hãy nêu rõ các bước làm trong phần mềm đó.";
+}
 
-    setState("Đang trả lời: @" + current.handle + " · " + model);
-    bump();
-    try {
-      const r = await callModel(model, toSend, plugins);
-      const reply = r.text.trim() || "(không có nội dung)";
-      messages.push({from: current.handle, text: reply, model: r.model});
-      saveChat();
-      renderMessages();
-      const next = pickNext(reply, current, enabled);
-      if (!next) { sys("Nhóm báo đã xong."); finished = true; break; }
-      current = next;
-    } catch (err) {
-      sys(err.name === "AbortError" ? "Đã dừng." : "Lỗi: " + err.message);
-      finished = true;
-      break;
-    }
-    if (delayMs && turn < maxTurns - 1) await sleep(delayMs);
+function pollUrl(prompt, seed){
+  return "https://image.pollinations.ai/prompt/" + encodeURIComponent(prompt) +
+    "?width=768&height=768&nologo=true&seed=" + seed;
+}
+
+/* ---------- quy trình: chọn công cụ, làm, kiểm duyệt, một kết quả ---------- */
+
+async function runTask(task){
+  const pick = chooseTool(task);
+  const tool = pick.tool;
+  if (!tool) throw new Error("không tìm thấy công cụ phù hợp");
+  if (tool.paid && !confirm("Claude là model trả phí và sẽ trừ tiền trong tài khoản OpenRouter của bạn. Tiếp tục?")) {
+    throw new Error("bạn đã hủy vì Claude là model trả phí");
   }
 
-  if (!finished) sys("Đã đạt " + maxTurns + " lượt. Gửi tiếp tin nhắn để nhóm làm tiếp.");
-  running = false; abortCtl = null;
-  $("send").disabled = false; $("stop").disabled = true;
-  setState("Sẵn sàng");
-  saveChat();
-  renderMessages();
+  const spec = {name: tool.name, model: modelFor(tool), prompt: toolPrompt(tool)};
+  const reviewer = {name: "Kiểm duyệt", model: getModels().reviewer, prompt: REVIEW_PROMPT};
+  const useReviewer = $("useReviewer").checked;
+  const maxRetry = useReviewer ? Math.max(0, Math.min(2, +$("retries").value || 0)) : 0;
+  const media = runMedia;
+
+  step("Chọn: " + tool.name + " (" + CATEGORY_LABELS[tool.cat] + ") · " + pick.why);
+
+  if (tool.gen) {
+    const prompt = (await ask(spec, buildUserText(task, "Chỉ trả về đúng một prompt tiếng Anh để tạo ảnh, không giải thích."), media)).slice(0, 900);
+    return {kind:"image", tool, text: prompt, seed: Math.floor(Math.random() * 99999)};
+  }
+
+  let draft = await ask(spec, buildUserText(task, ""), media);
+  let final = draft;
+
+  if (useReviewer) {
+    for (let attempt = 0; ; attempt++) {
+      const rv = parseReview(await ask(reviewer, "Việc gốc: " + task + "\n\nBản nháp của " + tool.name + ":\n" + draft, []));
+      if (rv.verdict === "pass") {
+        final = rv.text || draft;
+        step("Kiểm duyệt: đạt");
+        break;
+      }
+      if (attempt >= maxRetry) {
+        final = draft;
+        step("Kiểm duyệt: chưa đạt, hết lượt làm lại nên dùng bản nháp hiện có");
+        break;
+      }
+      step("Kiểm duyệt: yêu cầu làm lại · " + rv.text.slice(0, 200));
+      const retryMedia = $("mediaAll").checked ? media : [];
+      draft = await ask(spec, buildUserText(task, "Cần sửa theo kiểm duyệt:\n" + rv.text + "\n\nBản nháp cũ:\n" + draft), retryMedia);
+      final = draft;
+    }
+  }
+  return {kind:"text", tool, text: final};
 }
 
-async function sendMessage(){
+async function onRun(){
   if (running) return;
-  const text = $("input").value.trim();
-  if (!text && !pending.length) return;
-  if (!code()) return alert("Nhập mã truy cập trong phần Cài đặt và đội AI.");
-  const enabled = agents.filter(a => a.on);
-  if (!enabled.length) return alert("Bật ít nhất một agent trong đội AI.");
-  saveAgents();
+  const task = $("task").value.trim() || (pending.length ? "Phân tích các tệp đính kèm." : "");
+  if (!task) return alert("Nhập việc cần làm hoặc đính kèm tệp.");
+  if (!code()) return alert("Nhập mã truy cập trong phần Cài đặt.");
+  saveModels();
 
-  const fileText = pending.filter(a => a.kind === "text")
-    .map(a => "--- Tệp " + a.name + " ---\n" + a.text).join("\n\n");
-  const media = pending.filter(a => a.kind !== "text").flatMap(a => a.parts);
-
-  messages.push({
-    from: "user",
-    text: text || "(chỉ gửi tệp)",
-    files: pending.map(a => ({kind: a.kind, name: a.name})),
-    fileText,
-    media
-  });
+  runMedia = pending.filter(a => a.kind !== "text").flatMap(a => a.parts);
+  runFileText = pending.filter(a => a.kind === "text").map(a => "--- Tệp " + a.name + " ---\n" + a.text).join("\n\n");
   pending = [];
-  $("input").value = "";
   renderAttachments();
-  saveChat();
-  renderMessages();
-  await runRound(media, text);
+
+  running = true; stopRequested = false; callCount = 0; currentSteps = [];
+  abortCtl = new AbortController();
+  $("run").disabled = true; $("stop").disabled = false;
+  $("result").innerHTML = '<div class="card small">Đang làm việc. Có thể mất một lúc.</div>';
+
+  try {
+    const out = await runTask(task);
+    renderResult(out);
+  } catch (err) {
+    const msg = err.name === "AbortError" ? "Đã dừng." : "Lỗi: " + err.message;
+    step(msg);
+    $("result").innerHTML = `<div class="card err">${esc(msg)}</div>` + processCard();
+  } finally {
+    running = false; abortCtl = null;
+    $("run").disabled = false; $("stop").disabled = true;
+    setState("Sẵn sàng");
+  }
 }
 
-$("send").onclick = sendMessage;
+function processCard(){
+  return `<details class="card"><summary>Quá trình (${currentSteps.length} bước)</summary><pre>${esc(currentSteps.join("\n"))}</pre></details>`;
+}
+
+function renderResult(out){
+  let body;
+  if (out.kind === "image") {
+    body = `<img class="pic" id="pic" src="${esc(pollUrl(out.text, out.seed))}" alt="Ảnh được tạo"
+      onerror="this.alt='Chưa tải được ảnh. Đợi 15 giây rồi bấm Tạo lại.'">
+      <div class="small">Ảnh do Pollinations tạo từ prompt của ${esc(out.tool.name)}.</div>
+      <div class="small">Prompt: ${esc(out.text)}</div>
+      <button id="regen" class="alt">Tạo lại ảnh</button>`;
+  } else {
+    body = `<div class="txt">${esc(out.text)}</div>`;
+  }
+  $("result").innerHTML = `
+    <div class="card result">
+      <div class="who">Kết quả cuối · ${esc(out.tool.name)} · ${esc(CATEGORY_LABELS[out.tool.cat])}</div>
+      ${body}
+      <div class="row" style="margin-top:8px">
+        <button id="copyRes" class="alt">Sao chép</button>
+        <button id="speakRes" class="alt">Đọc to</button>
+      </div>
+    </div>` + processCard();
+
+  $("copyRes").onclick = async () => {
+    try { await navigator.clipboard.writeText(out.text); alert("Đã sao chép."); }
+    catch (e) { alert("Không sao chép tự động được. Hãy giữ chữ để copy thủ công."); }
+  };
+  $("speakRes").onclick = () => speak(out.text);
+  if (out.kind === "image") {
+    $("regen").onclick = () => {
+      out.seed = Math.floor(Math.random() * 99999);
+      $("pic").src = pollUrl(out.text, out.seed);
+    };
+  }
+}
+
+function speak(text){
+  if (!("speechSynthesis" in window)) return alert("Trình duyệt này không hỗ trợ đọc to.");
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text.slice(0, 4000));
+  u.lang = "vi-VN";
+  speechSynthesis.speak(u);
+}
+
+$("run").onclick = onRun;
 $("stop").onclick = () => {
   stopRequested = true;
   if (abortCtl) abortCtl.abort();
-};
-$("resetChat").onclick = () => {
-  if (!confirm("Xóa toàn bộ cuộc trò chuyện?")) return;
-  messages = [];
-  saveChat();
-  renderMessages();
 };
 
 /* ---------- tải model miễn phí có nhận ảnh ---------- */
 
 async function loadFreeVisionModels(){
   $("loadModels").disabled = true;
-  setStatus("Đang tải danh sách model");
   try {
     const res = await fetch("/api/models", {headers: {"X-Access-Code": code()}});
     const data = await res.json();
     if (!res.ok) throw new Error((data.error && data.error.message) || "HTTP " + res.status);
     $("modelList").innerHTML = data.ids.map(id => `<option value="${esc(id)}"></option>`).join("");
-    setStatus("Có " + data.ids.length + " model miễn phí nhận ảnh. Chọn trong ô Model nhận ảnh.");
+    alert("Có " + data.ids.length + " model miễn phí nhận ảnh. Chọn trong ô Model nhận ảnh.");
   } catch (e) {
-    setStatus("");
     alert("Không tải được danh sách: " + e.message);
   } finally {
     $("loadModels").disabled = false;
@@ -578,9 +678,13 @@ async function loadFreeVisionModels(){
 }
 $("loadModels").onclick = loadFreeVisionModels;
 
-renderAgents();
+/* ---------- khởi tạo ---------- */
+
+renderToolPick();
+renderToolFilters();
+renderModels();
 renderAttachments();
-renderMessages();
+renderTools();
 showUsed();
 </script>
 </body>
