@@ -122,8 +122,14 @@ details summary{cursor:pointer;font-size:14px;font-weight:600}
   </div>
 
   <div class="card">
+    <h2>Tài khoản AI</h2>
+    <div class="small">Dán API key lấy từ trang nhà phát triển của từng nhà cung cấp. Đây không phải đăng nhập bằng tài khoản ChatGPT, Claude hay Gemini. Gói Plus, Pro hay Advanced không bao gồm quyền dùng API. Key được lưu trong trình duyệt này.</div>
+    <div id="accounts" style="margin-top:8px"></div>
+  </div>
+
+  <div class="card">
     <h2>Model theo nhóm</h2>
-    <div class="small">Mỗi nhóm dùng model này nếu công cụ không đặt model riêng. Mặc định là openrouter/free (miễn phí). Model Claude là trả phí.</div>
+    <div class="small">Mỗi nhóm dùng model này nếu công cụ không đặt model riêng. Không ghi gì thì dùng OpenRouter. Để dùng nhà cung cấp khác, ghi theo dạng nhà-cung-cấp:tên-model, ví dụ gemini:gemini-3.5-flash. Tên model xem trong trang của nhà cung cấp.</div>
     <div id="models"></div>
     <button id="resetModels" class="alt">Khôi phục model mặc định</button>
   </div>
@@ -560,17 +566,62 @@ $("files").addEventListener("change", async e => {
 
 /* ---------- gọi model qua proxy ---------- */
 
+const ACCOUNTS = [
+  {id:"gemini", name:"Google Gemini (AI Studio)", hint:"Lấy key ở Google AI Studio. Có gói miễn phí giới hạn lượt."},
+  {id:"openai", name:"OpenAI", hint:"Lấy key ở trang nhà phát triển OpenAI, mục API keys. Tính tiền theo lượt dùng."},
+  {id:"deepseek", name:"DeepSeek", hint:"Lấy key ở trang nhà phát triển DeepSeek. Tính tiền theo lượt dùng."},
+  {id:"groq", name:"Groq", hint:"Lấy key ở Groq Console. Kiểm tra gói miễn phí trên trang."},
+  {id:"mistral", name:"Mistral", hint:"Lấy key ở Mistral Console. Kiểm tra gói miễn phí trên trang."}
+];
+const PROVIDER_IDS = ACCOUNTS.map(a => a.id);
+
+function splitModel(m){
+  const i = m.indexOf(":");
+  if (i > 0 && PROVIDER_IDS.includes(m.slice(0, i))) return {provider: m.slice(0, i), model: m.slice(i + 1)};
+  return {provider: "openrouter", model: m};
+}
+
+function renderAccounts(){
+  $("accounts").innerHTML = ACCOUNTS.map(a => {
+    const saved = !!localStorage.getItem("ta.key." + a.id);
+    return `<div class="card" style="margin-bottom:10px">
+      <div class="row between"><strong>${esc(a.name)}</strong><span class="badge">${saved ? "đã lưu" : "chưa có"}</span></div>
+      <div class="small">${esc(a.hint)}</div>
+      <input type="password" autocomplete="off" placeholder="Dán API key" data-acc="${a.id}">
+      <div class="row"><button class="alt" data-save="${a.id}">Lưu key</button><button class="alt" data-del="${a.id}">Xóa key</button></div>
+    </div>`;
+  }).join("");
+}
+$("accounts").addEventListener("click", e => {
+  const save = e.target.dataset.save, del = e.target.dataset.del;
+  if (save) {
+    const v = document.querySelector('[data-acc="' + save + '"]').value.trim();
+    if (!v) return alert("Dán API key trước khi lưu.");
+    localStorage.setItem("ta.key." + save, v);
+    renderAccounts();
+  }
+  if (del) {
+    localStorage.removeItem("ta.key." + del);
+    renderAccounts();
+  }
+});
+
 async function callModel(model, msgs, plugins){
+  const sp = splitModel(model);
   const maxTok = Math.max(256, Math.min(4096, +$("maxTokens").value || 2000));
-  const body = {model, messages: msgs, max_tokens: maxTok};
-  if (plugins) body.plugins = plugins;
+  const body = {provider: sp.provider, model: sp.model, messages: msgs, max_tokens: maxTok};
+  if (plugins && sp.provider === "openrouter") body.plugins = plugins;
   const payload = JSON.stringify(body);
   if (payload.length > MAX_PAYLOAD_CHARS) {
     throw new Error("nội dung quá lớn cho máy chủ, hãy bớt ảnh, khung hình hoặc tệp");
   }
+
+  const headers = {"Content-Type": "application/json", "X-Access-Code": code()};
+  if (sp.provider !== "openrouter") headers["X-Provider-Key"] = localStorage.getItem("ta.key." + sp.provider) || "";
+
   const res = await fetch("/api/chat", {
     method: "POST",
-    headers: {"Content-Type": "application/json", "X-Access-Code": code()},
+    headers,
     body: payload,
     signal: abortCtl ? abortCtl.signal : undefined
   });
@@ -579,14 +630,14 @@ async function callModel(model, msgs, plugins){
   if (!res.ok) {
     let detail = (data.error && data.error.message) || "";
     if (!detail && res.status === 504) detail = "máy chủ hết thời gian chờ, model đang chậm. Thử lại hoặc đổi model ở tab Cài đặt";
-    if (res.status === 402) detail = "số dư OpenRouter không đủ cho model này. Nạp thêm tại openrouter.ai/settings/credits, giảm Số token tối đa, hoặc chọn model miễn phí. Chi tiết: " + detail;
+    if (res.status === 402) detail = "số dư không đủ cho model này. Nạp thêm credit, giảm Số token tối đa, hoặc chọn model miễn phí. Chi tiết: " + detail;
     if (!detail) detail = res.statusText || raw.slice(0, 120) || "lỗi không rõ";
     throw new Error("HTTP " + res.status + ": " + detail);
   }
   const choice = data.choices && data.choices[0];
   let text = choice && choice.message ? choice.message.content : "";
   if (typeof text !== "string") text = JSON.stringify(text || "");
-  return {text, model: data.model || model};
+  return {text, model: data.model || sp.model};
 }
 
 function delayMs(){ return Math.max(0, +$("delay").value || 0) * 1000; }
@@ -809,6 +860,7 @@ renderToolPick();
 renderFlow();
 renderToolFilters();
 renderModels();
+renderAccounts();
 renderAttachments();
 renderTools();
 showUsed();
